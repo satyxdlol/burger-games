@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Burger Shop — Armá la hamburguesa perfecta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Courier+Prime:wght@400;700&family=Karla:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FBF1DE;
+    --charcoal:#2B2118;
+    --mustard:#E8A33D;
+    --ketchup:#C8432A;
+    --grill:#3D2B1F;
+    --cheese:#F2C94C;
+    --lettuce-green:#6B9B4F;
+    --paper:#FFFDF6;
+    --ok:#4F8F5B;
+    --bad:#B53A33;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 15% 10%, rgba(232,163,61,0.18), transparent 45%),
+      radial-gradient(circle at 85% 90%, rgba(200,67,42,0.15), transparent 45%),
+      var(--charcoal);
+    color:var(--cream);
+    font-family:'Karla', sans-serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:24px 16px 60px;
+  }
+  h1,h2,h3{font-family:'Bungee', cursive; letter-spacing:0.5px;}
+
+  /* SIGNAGE HEADER */
+  .signage{
+    text-align:center;
+    margin-bottom:18px;
+  }
+  .signage .marquee{
+    display:inline-block;
+    background:repeating-linear-gradient(135deg, var(--ketchup), var(--ketchup) 14px, #a8351f 14px, #a8351f 28px);
+    color:var(--paper);
+    padding:14px 28px;
+    border-radius:6px;
+    font-size:clamp(22px,4vw,34px);
+    box-shadow: 0 6px 0 #7a2418, 0 10px 18px rgba(0,0,0,0.5);
+    transform:rotate(-1deg);
+  }
+  .signage .sub{
+    margin-top:10px;
+    font-family:'Courier Prime', monospace;
+    font-size:13px;
+    color:var(--mustard);
+    letter-spacing:2px;
+    text-transform:uppercase;
+  }
+
+  .stage{
+    width:100%;
+    max-width:980px;
+    background:linear-gradient(180deg, #4a3424, #2f2114);
+    border:3px solid #1b140d;
+    border-radius:18px;
+    padding:26px;
+    box-shadow: inset 0 0 0 6px rgba(0,0,0,0.15), 0 14px 30px rgba(0,0,0,0.5);
+    position:relative;
+  }
+
+  /* HUD */
+  .hud{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:18px;
+    font-family:'Courier Prime', monospace;
+  }
+  .hud .money{
+    background:var(--ok);
+    color:var(--paper);
+    padding:8px 16px;
+    border-radius:8px;
+    font-weight:700;
+    font-size:18px;
+    box-shadow: 0 3px 0 #2f5d37;
+  }
+  .hud .count{
+    background:rgba(255,255,255,0.08);
+    padding:8px 16px;
+    border-radius:8px;
+    font-size:14px;
+  }
+
+  /* INFO BOX - consejos de armado */
+  .tip-note{
+    background:rgba(242,201,76,0.12);
+    border:1px dashed var(--mustard);
+    border-radius:10px;
+    padding:12px 16px;
+    font-size:13px;
+    line-height:1.5;
+    margin-bottom:20px;
+    color:var(--mustard);
+  }
+  .tip-note b{color:var(--cheese);}
+
+  /* TEMPORIZADOR */
+  .hud .timer{
+    background:var(--ketchup);
+    color:var(--paper);
+    padding:8px 16px;
+    border-radius:8px;
+    font-weight:700;
+    font-size:18px;
+    box-shadow: 0 3px 0 #7a2418;
+  }
+
+  /* MINI HAMBURGUESA EN EL TICKET */
+  .mini-burger{
+    display:flex;
+    flex-direction:column-reverse;
+    align-items:center;
+    margin:4px auto 14px;
+    width:70px;
+  }
+  .mini-layer{
+    width:60px;
+    height:9px;
+    border-radius:5px;
+    margin-top:-3px;
+    border:1px solid rgba(0,0,0,0.25);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  .mini-layer.bunBottom, .mini-layer.bunTop{ border-radius:8px 8px 5px 5px; }
+
+  /* START SCREEN */
+  .panel{
+    text-align:center;
+    padding:30px 10px;
+  }
+  .panel p{max-width:560px;margin:10px auto 24px;line-height:1.6;color:#e6dcc8;}
+
+  button{
+    font-family:'Karla', sans-serif;
+    font-weight:800;
+    cursor:pointer;
+    border:none;
+    border-radius:10px;
+    padding:14px 26px;
+    font-size:16px;
+    background:var(--mustard);
+    color:var(--charcoal);
+    box-shadow: 0 4px 0 #a86c1e;
+    transition:transform .08s ease;
+  }
+  button:active{transform:translateY(3px); box-shadow:0 1px 0 #a86c1e;}
+  button.secondary{background:transparent; color:var(--cream); border:2px solid var(--cream); box-shadow:none;}
+  button.danger{background:var(--ketchup); color:var(--paper); box-shadow:0 4px 0 #7a2418;}
+  button:disabled{opacity:0.4; cursor:not-allowed;}
+
+  /* ORDER TICKET */
+  .ticket-wrap{display:flex; justify-content:center; margin-bottom:6px;}
+  .ticket{
+    background:var(--paper);
+    color:#2a2a2a;
+    font-family:'Courier Prime', monospace;
+    width:280px;
+    padding:18px 16px 26px;
+    border-radius:2px;
+    position:relative;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+    transform:rotate(-1.2deg);
+  }
+  .ticket::before{
+    content:"";
+    position:absolute; left:0; right:0; bottom:-8px; height:16px;
+    background-image: radial-gradient(circle, var(--charcoal) 6px, transparent 7px);
+    background-size:18px 18px;
+    background-position: 0 0;
+    background-repeat:repeat-x;
+  }
+  .ticket h3{font-family:'Courier Prime',monospace; font-size:15px; text-align:center; margin:0 0 8px; border-bottom:1px dashed #999; padding-bottom:8px;}
+  .ticket .row{display:flex; justify-content:space-between; font-size:13px; margin:4px 0;}
+  .ticket .line{border-top:1px dashed #999; margin:10px 0;}
+  .ticket .item-list{font-size:12.5px; line-height:1.6;}
+  .ticket .item-list span{display:block;}
+  .ticket .price{font-weight:700; font-size:16px; text-align:right; margin-top:8px;}
+
+  /* CUSTOMER */
+  .customer-row{
+    display:flex; align-items:center; justify-content:center; gap:16px;
+    margin:14px 0 22px;
+  }
+  .avatar{
+    width:64px; height:64px; border-radius:50%;
+    background:var(--mustard);
+    display:flex; align-items:center; justify-content:center;
+    font-size:30px;
+    border:3px solid var(--charcoal);
+  }
+  .speech{
+    background:var(--paper); color:#2a2a2a; padding:10px 16px; border-radius:14px;
+    font-size:14px; max-width:320px; position:relative;
+  }
+
+  /* KITCHEN LAYOUT */
+  .kitchen{
+    display:flex; gap:28px; flex-wrap:wrap; justify-content:center; align-items:flex-start;
+  }
+  .ticket-col{flex:0 0 280px;}
+  .build-col{flex:1 1 360px; display:flex; flex-direction:column; align-items:center;}
+
+  .zona-armado{
+    width:160px;
+    min-height:260px;
+    display:flex;
+    flex-direction:column-reverse;
+    align-items:center;
+    justify-content:flex-start;
+    background:rgba(0,0,0,0.25);
+    border:2px solid #1b140d;
+    border-radius:10px 10px 4px 4px;
+    padding:8px;
+    position:relative;
+    margin-bottom:18px;
+  }
+  .zona-armado::after{
+    content:"PLATO";
+    position:absolute; bottom:-22px; font-family:'Courier Prime',monospace; font-size:10px; color:#9c8c74; letter-spacing:2px;
+  }
+  .layer{
+    width:140px;
+    height:22px;
+    border-radius:8px;
+    margin-top:-4px;
+    box-shadow: 0 2px 3px rgba(0,0,0,0.4), inset 0 -3px 0 rgba(0,0,0,0.15);
+    animation: drop .18s ease-out;
+    border:1.5px solid rgba(0,0,0,0.25);
+  }
+  @keyframes drop{
+    from{ transform:translateY(-30px); opacity:0;}
+    to{ transform:translateY(0); opacity:1;}
+  }
+  .layer.bunBottom, .layer.bunTop{ border-radius:14px 14px 8px 8px;}
+
+  .ingredient-tray{
+    display:flex; flex-wrap:wrap; gap:10px; justify-content:center; max-width:380px; margin-bottom:14px;
+  }
+  .ing-btn{
+    background:var(--paper); color:#2a2a2a; border-radius:10px; padding:10px 12px;
+    font-family:'Karla',sans-serif; font-weight:700; font-size:13px;
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    box-shadow:0 3px 0 #c9bda3;
+  }
+  .ing-swatch{width:30px; height:16px; border-radius:6px; border:1.5px solid rgba(0,0,0,0.25);}
+
+  .controls-row{display:flex; gap:12px; margin-top:8px; flex-wrap:wrap; justify-content:center;}
+
+  /* DRINK ZONE */
+  .drink-zone{display:flex; gap:28px; flex-wrap:wrap; justify-content:center; align-items:center;}
+  .cup-wrap{display:flex; flex-direction:column; align-items:center; gap:8px;}
+  .cup{
+    width:74px; height:130px; border:3px solid var(--paper); border-radius:0 0 14px 14px;
+    position:relative; overflow:hidden; background:rgba(255,255,255,0.05);
+    display:flex; align-items:flex-end; cursor:pointer; user-select:none;
+  }
+  .cup-fill{width:100%; transition:height .03s linear;}
+  .target-line{
+    position:absolute; left:-3px; right:-3px; height:3px; background:var(--cheese);
+    box-shadow:0 0 0 1px rgba(0,0,0,0.3);
+  }
+  .cup-readout{font-family:'Courier Prime',monospace; font-size:13px; color:#cbb;}
+  .served-ok{color:#8fdb9c; font-weight:700; font-size:13px; margin-bottom:10px;}
+  .served-bad{color:#f08f87; font-weight:700; font-size:13px; margin-bottom:10px;}
+  .drink-options{display:flex; gap:10px; flex-wrap:wrap; justify-content:center;}
+  .opt-btn{
+    background:rgba(255,255,255,0.08); color:var(--cream); border:2px solid transparent;
+    border-radius:10px; padding:10px 14px; font-weight:700; font-size:13px; cursor:pointer;
+  }
+  .opt-btn.selected{border-color:var(--cheese); background:rgba(242,201,76,0.18); color:var(--cheese);}
+
+  /* DELIVERY RESULT */
+  .compare-row{display:flex; gap:50px; justify-content:center; align-items:flex-end; margin:20px 0;}
+  .compare-col{text-align:center;}
+  .compare-col h4{font-family:'Courier Prime',monospace; font-size:12px; letter-spacing:2px; color:#bba; margin-bottom:8px;}
+
+  .result-banner{
+    text-align:center; font-family:'Bungee',cursive; font-size:26px; padding:14px; border-radius:10px; margin:18px 0;
+  }
+  .result-banner.ok{background:rgba(79,143,91,0.2); color:#8fdb9c;}
+  .result-banner.bad{background:rgba(181,58,51,0.2); color:#f08f87;}
+
+  .footer-note{
+    margin-top:24px; font-size:12px; color:#8a7a60; text-align:center; max-width:600px;
+  }
+  @media (max-width:520px){
+    .kitchen{flex-direction:column; align-items:center;}
+  }
+</style>
+</head>
+<body>
+
+<div class="signage">
+  <div class="marquee">🍔 BURGER SHOP 🍔</div>
+  <div class="sub">El restaurante donde armás cada pedido a mano</div>
+</div>
+
+<div class="stage" id="stage"></div>
+
+<div class="footer-note">Armá cada hamburguesa siguiendo el orden exacto del ticket, capa por capa, de abajo hacia arriba.</div>
+
+<script>
+/* ===================== DATOS DEL JUEGO ===================== */
+const ING = {
+  bunBottom:{label:"Pan base",  color:"#E8A33D"},
+  meat:     {label:"Carne",     color:"#5C3A21"},
+  cheese:   {label:"Queso",     color:"#F2C94C"},
+  bacon:    {label:"Panceta",   color:"#A13D2B"},
+  lettuce:  {label:"Lechuga",   color:"#6B9B4F"},
+  tomato:   {label:"Tomate",    color:"#C8432A"},
+  onion:    {label:"Cebolla",   color:"#D9B8E8"},
+  bunTop:   {label:"Pan tapa",  color:"#E8A33D"}
+};
+
+const RECIPES = [
+  {name:"Clásica",        price:1200, items:["bunBottom","meat","cheese","lettuce","tomato","bunTop"]},
+  {name:"Doble Carne",    price:1600, items:["bunBottom","meat","cheese","meat","cheese","bunTop"]},
+  {name:"Bacon Especial", price:1800, items:["bunBottom","meat","bacon","cheese","onion","bunTop"]},
+  {name:"Vegetariana",    price:1100, items:["bunBottom","lettuce","tomato","onion","cheese","bunTop"]},
+  {name:"Criolla",        price:1500, items:["bunBottom","meat","onion","tomato","bacon","bunTop"]}
+];
+
+const DRINKS = {
+  cola:    {label:"Cola",    color:"#3D2B1F"},
+  naranja: {label:"Naranja", color:"#F2994A"},
+  limon:   {label:"Limón",   color:"#9CCC65"}
+};
+const SIZES = {
+  chica:  {label:"Chica",  price:300, pct:55},
+  grande: {label:"Grande", price:500, pct:95}
+};
+
+/* ===================== ESTADO ===================== */
+let money = 0;
+let served = 0;
+let order = null;        // {recipe, drink, size, total}
+let capasJugador = [];    // capas que va agregando el jugador (índice 0 = base)
+let drinkChoice = {type:null};
+let fillLevel = 0;       // 0-100, nivel actual del vaso
+let fillTimer = null;
+let served_ok = false;   // si el vaso quedó servido dentro del rango correcto
+let phase = "start";     // start | order | kitchen | drink | deliver | gameover
+
+const TIEMPO_INICIAL = 180; // 3 minutos
+const BONUS_ACIERTO = 10;   // segundos que se suman al entregar bien
+const PENALIZACION_ERROR = 20; // segundos que se restan al entregar mal
+let timeLeft = TIEMPO_INICIAL;
+let timerInterval = null;
+
+const stage = document.getElementById("stage");
+
+/* ===================== UTILIDADES ===================== */
+function rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function formatTime(s){
+  const m = Math.floor(s/60);
+  const sec = s % 60;
+  return (m<10?"0":"")+m+":"+(sec<10?"0":"")+sec;
+}
+
+function updateTimerDisplay(){
+  const el = document.getElementById("timerDisplay");
+  if(el) el.textContent = "⏱️ " + formatTime(timeLeft);
+}
+
+function tickTimer(){
+  timeLeft--;
+  if(timeLeft <= 0){
+    timeLeft = 0;
+    updateTimerDisplay();
+    endGame();
+    return;
+  }
+  updateTimerDisplay();
+}
+
+function startTimer(){
+  if(timerInterval) return;
+  timerInterval = setInterval(tickTimer, 1000);
+}
+
+function stopTimer(){
+  if(timerInterval){ clearInterval(timerInterval); timerInterval = null; }
+}
+
+function endGame(){
+  stopTimer();
+  if(fillTimer){ clearInterval(fillTimer); fillTimer = null; }
+  phase = "gameover";
+  renderGameOver();
+}
+
+function renderGameOver(){
+  stage.innerHTML = `
+    <div class="panel">
+      <h2>⏰ ¡Se acabó el tiempo!</h2>
+      <p>Atendiste a <b>${served}</b> cliente${served===1?"":"s"} y ganaste <b>$${money}</b> en total.</p>
+      <button onclick="startGame()">Jugar de nuevo 🔄</button>
+    </div>
+  `;
+}
+
+function newOrder(){
+  const recipe = rand(RECIPES);
+  const drinkType = rand(Object.keys(DRINKS));
+  const size = rand(Object.keys(SIZES));
+  const total = recipe.price + SIZES[size].price;
+  order = {recipe, drinkType, size, total};
+  capasJugador = [];
+  drinkChoice = {type:null};
+  fillLevel = 0;
+  served_ok = false;
+}
+
+function agregarIngrediente(ingredientKey){
+  capasJugador.push(ingredientKey);
+  renderKitchen();
+}
+function quitarUltimo(){
+  capasJugador.pop();
+  renderKitchen();
+}
+
+/* ===================== RENDER: START ===================== */
+function renderStart(){
+  stage.innerHTML = `
+    <div class="panel">
+      <h2>👨‍🍳 Bienvenido a la cocina</h2>
+      <p>Armá cada hamburguesa agregando los ingredientes uno por uno, en el orden exacto que pide el ticket,
+      de abajo hacia arriba. Si te equivocás, podés quitar el último ingrediente que pusiste.
+      Armá el pedido exacto, serví la bebida correcta y entregale el plato al cliente antes de que se acabe
+      el tiempo para ganar la mayor cantidad de dinero posible.</p>
+      <button onclick="startGame()">Abrir el local 🔔</button>
+    </div>
+  `;
+}
+
+function startGame(){
+  money = 0; served = 0; timeLeft = TIEMPO_INICIAL;
+  stopTimer();
+  nextCustomer();
+  startTimer();
+}
+
+/* ===================== RENDER: HUD (compartido) ===================== */
+function hudHTML(){
+  return `
+    <div class="hud">
+      <div class="money">💵 $${money}</div>
+      <div class="timer" id="timerDisplay">⏱️ ${formatTime(timeLeft)}</div>
+      <div class="count">Clientes atendidos: ${served}</div>
+    </div>
+  `;
+}
+
+/* ===================== RENDER: NUEVO CLIENTE / PEDIDO ===================== */
+function nextCustomer(){
+  newOrder();
+  phase = "order";
+  renderOrder();
+}
+
+function miniBurgerHTML(items){
+  return `<div class="mini-burger">${items.map(k => `<div class="mini-layer ${k}" style="background:${ING[k].color}"></div>`).join("")}</div>`;
+}
+
+function renderOrder(){
+  const r = order.recipe;
+  const itemsList = r.items.map(k => `<span>• ${ING[k].label}</span>`).join("");
+  stage.innerHTML = `
+    ${hudHTML()}
+    <div class="tip-note">📌 <b>Consejo:</b> agregá los ingredientes en el orden exacto del ticket, de abajo hacia arriba.
+    Si te equivocás, usá <b>"Quitar el último ingrediente"</b> para corregir — sólo podés quitar el que agregaste más recientemente.</div>
+    <div class="customer-row">
+      <div class="avatar">🙂</div>
+      <div class="speech">¡Hola! Quiero una <b>${r.name}</b> con una bebida <b>${SIZES[order.size].label}</b> de <b>${DRINKS[order.drinkType].label}</b>, por favor.</div>
+    </div>
+    <div class="ticket-wrap">
+      <div class="ticket">
+        <h3>★ TICKET DE PEDIDO ★</h3>
+        ${miniBurgerHTML(r.items)}
+        <div class="row"><span>Hamburguesa:</span><span>${r.name}</span></div>
+        <div class="item-list">${itemsList}</div>
+        <div class="line"></div>
+        <div class="row"><span>Bebida:</span><span>${DRINKS[order.drinkType].label}</span></div>
+        <div class="row"><span>Tamaño:</span><span>${SIZES[order.size].label}</span></div>
+        <div class="price">Total: $${order.total}</div>
+      </div>
+    </div>
+    <div class="panel" style="padding-top:0;">
+      <button onclick="goKitchen()">Ir a la cocina 🔥</button>
+    </div>
+  `;
+}
+
+/* ===================== RENDER: COCINA (ARMAR HAMBURGUESA) ===================== */
+function goKitchen(){
+  phase = "kitchen";
+  renderKitchen();
+}
+
+function renderKitchen(){
+  const trayButtons = Object.keys(ING).map(k => `
+    <div class="ing-btn" onclick="agregarIngrediente('${k}')">
+      <div class="ing-swatch" style="background:${ING[k].color}"></div>
+      ${ING[k].label}
+    </div>
+  `).join("");
+
+  const layers = capasJugador.map(k => `<div class="layer ${k}" style="background:${ING[k].color}"></div>`).join("");
+
+  stage.innerHTML = `
+    ${hudHTML()}
+    <div class="kitchen">
+      <div class="ticket-col">
+        <div class="ticket">
+          <h3>★ TICKET ★</h3>
+          ${miniBurgerHTML(order.recipe.items)}
+          <div class="row"><span>Hamburguesa:</span><span>${order.recipe.name}</span></div>
+          <div class="item-list">${order.recipe.items.map(k=>`<span>• ${ING[k].label}</span>`).join("")}</div>
+        </div>
+      </div>
+      <div class="build-col">
+        <h3 style="font-size:16px;margin:0 0 10px;">Armá la hamburguesa</h3>
+        <div class="zona-armado">${layers}</div>
+        <div class="ingredient-tray">${trayButtons}</div>
+        <div class="controls-row">
+          <button class="danger" onclick="quitarUltimo()" ${capasJugador.length===0 ? "disabled":""}>⬅ Quitar el último ingrediente</button>
+          <button onclick="goDrink()" ${capasJugador.length===0 ? "disabled":""}>Listo, servir bebida ➜</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ===================== RENDER: BEBIDA (MINIJUEGO DE LLENADO) ===================== */
+function goDrink(){
+  phase = "drink";
+  drinkChoice = {type:null};
+  fillLevel = 0;
+  served_ok = false;
+  renderDrink();
+}
+
+// resguardo global: si el usuario suelta el click fuera del vaso, igual se detiene el llenado
+document.addEventListener("mouseup", () => { if(fillTimer) stopFilling(); });
+
+function selectDrinkType(t){
+  drinkChoice.type = t;
+  fillLevel = 0;
+  served_ok = false;
+  renderDrink();
+}
+
+function targetRange(){
+  // rango de tolerancia para considerar el vaso bien servido
+  const target = SIZES[order.size].pct;
+  return {min: target - 6, max: target + 6, target};
+}
+
+function startFilling(){
+  if(!drinkChoice.type || fillTimer) return;
+  fillTimer = setInterval(() => {
+    fillLevel = Math.min(100, fillLevel + 2.2);
+    updateCupVisual();
+    if(fillLevel >= 100) stopFilling();
+  }, 30);
+}
+
+function stopFilling(){
+  if(fillTimer){ clearInterval(fillTimer); fillTimer = null; }
+  const r = targetRange();
+  served_ok = fillLevel >= r.min && fillLevel <= r.max;
+  renderDrink();
+}
+
+function resetCup(){
+  fillLevel = 0;
+  served_ok = false;
+  renderDrink();
+}
+
+function updateCupVisual(){
+  const fillEl = document.getElementById("cupFill");
+  if(fillEl) fillEl.style.height = fillLevel + "%";
+}
+
+function renderDrink(){
+  const r = targetRange();
+  const fillColor = drinkChoice.type ? DRINKS[drinkChoice.type].color : "rgba(255,255,255,0.15)";
+
+  const drinkBtns = Object.keys(DRINKS).map(k => `
+    <button class="opt-btn drink-pick ${drinkChoice.type===k?'selected':''}" data-drink="${k}">${DRINKS[k].label}</button>
+  `).join("");
+
+  stage.innerHTML = `
+    ${hudHTML()}
+    <h3 style="text-align:center;font-size:16px;">Servir bebida</h3>
+    <p style="text-align:center;font-size:13px;color:#cbb;">Pedido: <b>${DRINKS[order.drinkType].label}</b> tamaño <b>${SIZES[order.size].label}</b></p>
+    <div class="lifo-note">📌 Elegí el sabor, después <b>mantené presionado</b> el vaso para llenarlo y <b>soltá</b> justo cuando llegue a la línea marcada (el nivel que corresponde al tamaño pedido).</div>
+    <div class="drink-zone">
+      <div class="cup-wrap">
+        <div class="cup" id="cupEl">
+          <div class="target-line" style="bottom:${r.target}%"></div>
+          <div class="cup-fill" id="cupFill" style="height:${fillLevel}%; background:${fillColor};"></div>
+        </div>
+        <div class="cup-readout">${Math.round(fillLevel)}%</div>
+      </div>
+      <div>
+        <div class="drink-options" style="margin-bottom:14px;">${drinkBtns}</div>
+        ${served_ok ? `<div class="served-ok">✅ ¡Servido en el nivel justo!</div>` : (fillLevel>0 ? `<div class="served-bad">❌ Nivel incorrecto, probá de nuevo</div>` : "")}
+        <div class="controls-row">
+          <button class="secondary" id="resetCupBtn">↺ Reiniciar vaso</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel" style="padding-top:10px;">
+      <button class="secondary" id="backToKitchenBtn">⬅ Volver a la cocina</button>
+      <button id="goDeliverBtn" ${(!drinkChoice.type || !served_ok) ? "disabled":""}>Entregar pedido al cliente 🛎️</button>
+    </div>
+  `;
+
+  // listeners (más confiables que onclick inline)
+  document.querySelectorAll(".drink-pick").forEach(btn => {
+    btn.addEventListener("click", () => selectDrinkType(btn.dataset.drink));
+  });
+
+  const cupEl = document.getElementById("cupEl");
+  if(cupEl && drinkChoice.type){
+    cupEl.addEventListener("mousedown", startFilling);
+    cupEl.addEventListener("touchstart", (e)=>{ e.preventDefault(); startFilling(); }, {passive:false});
+
+    // soltar el botón / dedo detiene el llenado
+    cupEl.addEventListener("mouseup", stopFilling);
+    cupEl.addEventListener("mouseleave", stopFilling);
+    cupEl.addEventListener("touchend", (e)=>{ e.preventDefault(); stopFilling(); }, {passive:false});
+    cupEl.addEventListener("touchcancel", (e)=>{ e.preventDefault(); stopFilling(); }, {passive:false});
+  }
+
+  const resetBtn = document.getElementById("resetCupBtn");
+  if(resetBtn) resetBtn.addEventListener("click", resetCup);
+
+  const backBtn = document.getElementById("backToKitchenBtn");
+  if(backBtn) backBtn.addEventListener("click", () => { phase='kitchen'; renderKitchen(); });
+
+  const deliverBtn = document.getElementById("goDeliverBtn");
+  if(deliverBtn) deliverBtn.addEventListener("click", goDeliver);
+}
+
+/* ===================== RENDER: ENTREGA Y RESULTADO ===================== */
+function goDeliver(){
+  phase = "deliver";
+
+  const burgerOk = JSON.stringify(capasJugador) === JSON.stringify(order.recipe.items);
+  const drinkOk = drinkChoice.type === order.drinkType && served_ok;
+  const allOk = burgerOk && drinkOk;
+
+  if(allOk){
+    money += order.total;
+  }
+  served += 1;
+
+  const madeLayers = capasJugador.map(k => `<div class="layer" style="background:${ING[k].color}"></div>`).join("");
+  const wantLayers = order.recipe.items.map(k => `<div class="layer" style="background:${ING[k].color}"></div>`).join("");
+
+  stage.innerHTML = `
+    ${hudHTML()}
+    <div class="result-banner ${allOk ? 'ok':'bad'}">
+      ${allOk ? `¡Pedido correcto! +$${order.total}` : "El pedido no coincide 😕"}
+    </div>
+    <div class="compare-row">
+      <div class="compare-col">
+        <h4>LO QUE PEDISTE</h4>
+        <div class="zona-armado" style="min-height:200px;">${wantLayers}</div>
+      </div>
+      <div class="compare-col">
+        <h4>LO QUE ARMASTE</h4>
+        <div class="zona-armado" style="min-height:200px;">${madeLayers}</div>
+      </div>
+    </div>
+    <p style="text-align:center;font-size:13px;color:#cbb;">
+      Hamburguesa: ${burgerOk ? "✅ correcta" : "❌ no coincide en orden/ingredientes"} &nbsp;|&nbsp;
+      Bebida: ${drinkOk ? "✅ correcta" : "❌ incorrecta"}
+    </p>
+    <div class="panel" style="padding-top:6px;">
+      <button onclick="nextCustomer()">Siguiente cliente ➜</button>
+    </div>
+  `;
+}
+
+/* ===================== INICIO ===================== */
+renderStart();
+</script>
+</body>
+</html>
