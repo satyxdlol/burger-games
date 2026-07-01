@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Burger Stack</title>
+    <style>
+        /* ==========================================
+           1. ESTILOS DE INTERFAZ GENERAL Y FONDO GAMER
+           ========================================== */
+        * { box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+        }
+
+        body {
+            font-family: 'Impact', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #111026; 
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Envoltorio que centra el juego y permite reescalarlo (JS) sin
+           romper el centrado, para que se vea centrado en cualquier pantalla */
+        #escenario-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .titulo-wrap {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 15px;
+        }
+
+        h1 { 
+            margin: 0; 
+            font-weight: 900; 
+            font-size: 52px; 
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #f59e0b; 
+            text-shadow: 4px 4px 0px #db2777, 8px 8px 0px #1e1b4b;
+        }
+
+        /* ==========================================
+           2. CONTENEDOR HORIZONTAL AMPLIADO (GRID)
+           ========================================== */
+        .game-container-horizontal {
+            display: grid;
+            grid-template-columns: 220px 650px 220px; 
+            gap: 15px;
+            background: #1e1b4b; 
+            padding: 20px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(219, 39, 119, 0.15); 
+            border: 4px solid #db2777; 
+            align-items: start;
+            transform-origin: center center;
+        }
+
+        .side-panel {
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #141233; 
+            border: 2px solid #4338ca;
+            border-radius: 16px;
+            padding: 12px;
+            box-sizing: border-box;
+            height: 480px;
+        }
+
+        .panel-title {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+            color: #38bdf8; 
+            text-align: center;
+        }
+
+        .nombre-combo {
+            font-size: 11px;
+            font-weight: 900;
+            color: #ffffff;
+            margin-bottom: 12px;
+            text-align: center;
+            background: #db2777;
+            padding: 8px;
+            border-radius: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            text-transform: uppercase;
+            box-shadow: 0 4px 0px #9d174d;
+        }
+
+        .static-stack {
+            display: flex;
+            flex-direction: column-reverse; 
+            align-items: center;
+            height: 380px;
+            justify-content: center;
+            gap: 4px;
+            width: 100%;
+        }
+
+        /* ==========================================
+           3. BOTONES DE CONTROL Y REPRODUCCIÓN
+           ========================================== */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn-arcade {
+            border: none;
+            padding: 10px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            box-sizing: border-box;
+            color: white;
+            text-transform: uppercase;
+        }
+        .btn-arcade:active { transform: translateY(3px); box-shadow: none; }
+        
+        .btn-play  { background-color: #059669; box-shadow: 0 4px 0px #047857; }
+        .btn-pause { background-color: #d97706; box-shadow: 0 4px 0px #b45309; }
+        .btn-exit  { background-color: #dc2626; box-shadow: 0 4px 0px #991b1b; }
+        .btn-arcade:disabled { background-color: #374151; color: #6b7280; cursor: not-allowed; box-shadow: none; opacity: 0.5; }
+
+        .speed-selector {
+            display: flex;
+            gap: 4px;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn-speed {
+            background-color: #312e81;
+            box-shadow: 0 3px 0px #1e1b4b;
+            font-size: 9px;
+            padding: 6px;
+            flex: 1;
+        }
+
+        .btn-speed.active {
+            background-color: #38bdf8;
+            color: #111026;
+            box-shadow: 0 3px 0px #0284c7;
+        }
+
+        /* ==========================================
+           4. CONTROLES TÁCTILES ADAPTADOS PARA MÓVILES
+           ========================================== */
+        .teclas-guia {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+            margin-top: auto;
+            border-top: 2px solid #2563eb;
+            padding-top: 10px;
+        }
+
+        .dpad-row {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .btn-touch {
+            background-color: #2563eb;
+            box-shadow: 0 4px 0px #1d4ed8;
+            font-size: 16px;
+            padding: 12px;
+        }
+        .btn-touch-pop {
+            background-color: #ec4899;
+            box-shadow: 0 4px 0px #be185d;
+            font-size: 11px;
+        }
+
+        /* ==========================================
+           5. ÁREA CENTRAL DE JUEGO (650px)
+           ========================================== */
+        .game-area {
+            position: relative;
+            width: 650px; 
+            height: 480px;
+            background-color: #0c0a21; 
+            border: 3px solid #4338ca;
+            border-radius: 18px;
+            overflow: hidden;
+            box-sizing: border-box;
+            touch-action: none;
+        }
+
+        /* ==========================================
+           6. PIXEL ART / DISEÑO ORIGINAL CON DIBUJITOS
+           ========================================== */
+        .ingrediente {
+            width: 140px;
+            height: 25px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: 800;
+            font-size: 11px;
+            letter-spacing: 0.2px;
+            color: white;
+            box-shadow: inset 0 -3px 0 rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            /* Contorno suave: alcanza para leer bien sin verse "cargado" */
+            text-shadow:
+                -1px -1px 0 rgba(0,0,0,0.55),
+                 1px -1px 0 rgba(0,0,0,0.55),
+                -1px  1px 0 rgba(0,0,0,0.55),
+                 1px  1px 0 rgba(0,0,0,0.55);
+        }
+
+        .cayendo {
+            position: absolute;
+            width: 120px;
+            height: 24px;
+            font-size: 10px;
+        }
+        
+        /* Colores icónicos estructurados para simular comida real */
+        .pan-superior  { background-color: #de8f49; border-radius: 14px 14px 4px 4px; height: 32px; color: #fff3cd; }
+        .pan-inferior  { background-color: #de8f49; border-radius: 4px 4px 12px 12px; height: 24px; }
+        .carne         { background-color: #54311c; border: 1px dashed #3d2213; }
+        .queso         { background-color: #f59e0b; color: #451a03; text-shadow: none; border-radius: 2px; }
+        .lechuga       { background-color: #22c55e; border-radius: 8px 4px 8px 4px; }
+        .tomate        { background-color: #ef4444; border-left: 8px solid #b91c1c; border-right: 8px solid #b91c1c; }
+        .huevo         { background: radial-gradient(circle, #f59e0b 35%, #f8fafc 36%); color: #334155; text-shadow: none; border: 1px solid #cbd5e1; }
+        .jamon         { background-color: #f472b6; border-radius: 4px; color: #500724; text-shadow: none; }
+        .tocino        { background: repeating-linear-gradient(90deg, #991b1b, #991b1b 15px, #ef4444 15px, #ef4444 30px); }
+        .cebolla       { background-color: #c084fc; border: 2px solid #6b21a8; color: #ffffff; }
+        .ketchup       { background-color: #dc2626; height: 16px; border-radius: 50px; }
+        .mayonesa      { background-color: #fef08a; height: 16px; border-radius: 50px; color: #713f12; text-shadow: none; }
+        .mostaza       { background-color: #eab308; height: 16px; border-radius: 50px; color: #451a03; text-shadow: none; }
+
+        /* El Plato Receptor Mecánico (CORREGIDO: antes había una regla #plato duplicada
+           y anidada por error, lo que hacía que el navegador la interpretara como
+           "#plato #plato" y nunca se aplicara al plato real). */
+        #plato {
+            position: absolute;
+            bottom: 10px;
+            left: 250px; 
+            width: 150px;
+            height: 12px;
+            background-color: #cbd5e1;
+            border-radius: 0 0 12px 12px;
+            border-top: 3px solid #94a3b8;
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            justify-content: flex-start;
+            overflow: visible;
+            transition: left 0.05s ease-out; /* Suaviza el desplazamiento táctil */
+        }
+
+        #plato .ingrediente { position: relative; margin-bottom: -3px; width: 140px; }
+
+        .pause-overlay {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(17, 16, 38, 0.85);
+            color: #38bdf8;
+            font-weight: bold;
+            font-size: 22px;
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
+            letter-spacing: 3px;
+        }
+
+        /* ==========================================
+           7. VENTANAS EMERGENTES (MODALES DE EVENTOS)
+           ========================================== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(11, 10, 38, 0.8);
+            justify-content: center; align-items: center;
+            z-index: 10;
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            font-family: 'Segoe UI', sans-serif;
+            background: #1e1b4b; padding: 30px; border-radius: 20px;
+            text-align: center; box-shadow: 0 0 30px rgba(219,39,119,0.3);
+            max-width: 320px;
+            border: 3px solid #db2777;
+            animation: popUp 0.25s ease-out;
+        }
+        @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-content h2.win-title { color: #22c55e; margin-top: 0; text-transform: uppercase; }
+        .modal-content h2.lose-title { color: #ef4444; margin-top: 0; text-transform: uppercase; }
+        .modal-btns { display: flex; gap: 12px; justify-content: center; margin-top: 20px; }
+
+        /* Marcador de racha/puntaje (mejora nueva, mismo estilo visual) */
+        .score-badge {
+            font-size: 11px;
+            font-weight: 900;
+            color: #0c0a21;
+            background: #38bdf8;
+            padding: 6px 10px;
+            border-radius: 10px;
+            box-shadow: 0 3px 0px #0284c7;
+            margin-bottom: 12px;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="titulo-wrap">
+        <svg width="64" height="56" viewBox="0 0 64 56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <!-- Pan superior -->
+            <path d="M4 26 Q4 8 32 8 Q60 8 60 26 Z" fill="#de8f49"/>
+            <circle cx="16" cy="15" r="1.6" fill="#fff3cd"/>
+            <circle cx="26" cy="11" r="1.6" fill="#fff3cd"/>
+            <circle cx="37" cy="12" r="1.6" fill="#fff3cd"/>
+            <circle cx="47" cy="16" r="1.6" fill="#fff3cd"/>
+            <!-- Lechuga -->
+            <path d="M3 27 Q10 22 16 27 Q22 21 28 27 Q34 22 40 27 Q46 21 52 27 Q58 22 61 27 L61 32 L3 32 Z" fill="#22c55e"/>
+            <!-- Queso -->
+            <path d="M4 31 L60 31 L54 38 L10 38 Z" fill="#f59e0b"/>
+            <!-- Carne -->
+            <rect x="3" y="36" width="58" height="8" rx="4" fill="#54311c"/>
+            <!-- Tomate -->
+            <rect x="5" y="43" width="54" height="4" rx="2" fill="#ef4444"/>
+            <!-- Pan inferior -->
+            <path d="M4 47 Q4 55 32 55 Q60 55 60 47 Z" fill="#de8f49"/>
+        </svg>
+        <h1>BURGER STACK</h1>
+    </div>
+
+    <div id="escenario-wrapper">
+    <div class="game-container-horizontal" id="interfaz-juego">
+        
+        <!-- PANEL IZQUIERDO: SECCIÓN DE RECETAS ASIGNADAS -->
+        <div class="side-panel">
+            <div class="panel-title">Menú Solicitado</div>
+            <div class="nombre-combo" id="nombre-combo">Oprime Iniciar</div>
+            <div class="score-badge" id="marcador">🏆 Pedidos: 0</div>
+            <div class="panel-title">Lista de Armado</div>
+            <div class="static-stack" id="pedido-visual"></div>
+        </div>
+
+        <!-- ESCENARIO CENTRAL -->
+        <div class="game-area" id="escenario">
+            <div class="pause-overlay" id="pausa-cartel">🕹️ JUEGO PAUSADO 🕹️</div>
+            <div id="plato"></div>
+        </div>
+
+        <!-- PANEL DERECHO -->
+        <div class="side-panel">
+            <div class="panel-title">Panel de Control</div>
+            <div class="control-group">
+                <button id="btn-play" class="btn-arcade btn-play" onclick="controlIniciar()">▶️ Iniciar</button>
+                <button id="btn-pause" class="btn-arcade btn-pause" onclick="controlPausar()" disabled>⏸️ Pausar</button>
+                <button class="btn-arcade btn-exit" onclick="salirDelJuego()">❌ Salir</button>
+            </div>
+
+            <div class="panel-title">Dificultad</div>
+            <div class="speed-selector">
+                <button id="sp-lento" class="btn-arcade btn-speed" onclick="cambiarVelocidad('lento')">Lento</button>
+                <button id="sp-medio" class="btn-arcade btn-speed active" onclick="cambiarVelocidad('medio')">Medio</button>
+                <button id="sp-rapido" class="btn-arcade btn-speed" onclick="cambiarVelocidad('rapido')">Rápido</button>
+            </div>
+
+            <div class="panel-title">Controles Mobile</div>
+            <div class="teclas-guia">
+                <div class="dpad-row">
+                    <button class="btn-arcade btn-touch" onclick="moverCelular(-1)">◀</button>
+                    <button class="btn-arcade btn-touch" onclick="moverCelular(1)">▶</button>
+                </div>
+                <button class="btn-arcade btn-touch-pop" onclick="popIngrediente()">🗑️ Quitar Último</button>
+            </div>
+        </div>
+
+    </div>
+    </div>
+
+    <!-- MODAL DE ÉXITO -->
+    <div class="modal" id="modal-victoria">
+        <div class="modal-content">
+            <h2 class="win-title">🛎️¡Pedido Entregado!</h2>
+            <p>¡Hamburguesa armada a la perfección, ganaste propina!</p>
+            <div class="modal-btns">
+                <button class="btn-arcade btn-play" onclick="siguienteRonda()">Siguiente</button>
+                <button class="btn-arcade btn-exit" onclick="salirDelJuego()">Salir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE RECHAZO -->
+    <div class="modal" id="modal-derrota">
+        <div class="modal-content">
+            <h2 class="lose-title">💥¡Se derrumbó!</h2>
+            <p>El orden de los ingredientes en el plato no coincide con el pedido.</p>
+            <div class="modal-btns">
+                <button class="btn-arcade btn-pause" onclick="siguienteRonda()">Reintentar</button>
+                <button class="btn-arcade btn-exit" onclick="salirDelJuego()">Salir</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- MOTOR DE AUDIO ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(tipo) {
+            // Mejora: si el navegador suspendió el audio por política de autoplay,
+            // lo reanudamos aquí para que los sonidos siempre se escuchen.
+            if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+
+            let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            if (tipo === 'push') {
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(750, audioCtx.currentTime + 0.06);
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.06);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.06);
+            } else if (tipo === 'pop') {
+                osc.frequency.setValueAtTime(260, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(90, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (tipo === 'ganar') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.08); 
+                osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.16); 
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+            } else if (tipo === 'perder') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(70, audioCtx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+            }
+        }
+
+        // --- BANCO CENTRAL DE COMBOS ---
+        const listaCombos = [
+            { nombre: "🥓 Americana Bacon", receta: ["pan-inferior", "carne", "queso", "tocino", "ketchup", "pan-superior"] },
+            { nombre: "🍳 Egg Burger", receta: ["pan-inferior", "carne", "tocino", "huevo", "mayonesa", "pan-superior"] },
+            { nombre: "🧅 Gourmet Onion", receta: ["pan-inferior", "carne", "queso", "cebolla", "mostaza", "pan-superior"] },
+            { nombre: "👹 Monster Triple", receta: ["pan-inferior", "carne", "queso", "carne", "queso", "carne", "tocino", "pan-superior"] },
+            { nombre: "🥪 Clásica Completa", receta: ["pan-inferior", "carne", "jamon", "queso", "lechuga", "tomate", "pan-superior"] },
+            { nombre: "🔥 Especial Suprema", receta: ["pan-inferior", "carne", "tocino", "queso", "cebolla", "ketchup", "pan-superior"] },
+            { nombre: "🌿 Super Vegana", receta: ["pan-inferior", "lechuga", "tomate", "cebolla", "mayonesa", "pan-superior"] },
+            { nombre: "🧀 Extra Cheese", receta: ["pan-inferior", "carne", "queso", "queso", "pan-superior"] },
+            { nombre: "🐷 Especial Jamón-Huevo", receta: ["pan-inferior", "carne", "jamon", "huevo", "ketchup", "pan-superior"] }
+        ];
+
+        let pedidoObjetivo = [];
+        let tiposIngredientes = ["carne", "queso", "tomate", "lechuga", "huevo", "jamon", "tocino", "cebolla", "ketchup", "mayonesa", "mostaza", "pan-superior"];
+        
+        let pilaJugador = ["pan-inferior"];
+        let juegoCorriendo = false; 
+        let primerArranque = true;
+        let puntaje = 0; // mejora: contador de pedidos entregados con éxito
+
+        let velocidadCaidaActual = 1.9; 
+        function cambiarVelocidad(modo) {
+            document.getElementById("sp-lento").classList.remove("active");
+            document.getElementById("sp-medio").classList.remove("active");
+            document.getElementById("sp-rapido").classList.remove("active");
+
+            if (modo === 'lento') {
+                velocidadCaidaActual = 1.0; 
+                document.getElementById("sp-lento").classList.add("active");
+            } else if (modo === 'medio') {
+                velocidadCaidaActual = 1.9; 
+                document.getElementById("sp-medio").classList.add("active");
+            } else if (modo === 'rapido') {
+                velocidadCaidaActual = 2.8; 
+                document.getElementById("sp-rapido").classList.add("active");
+            }
+        }
+
+        const nombresVisuales = {
+            "pan-inferior": "🍞 PAN INFERIOR", "carne": "🥩 CARNE", "queso": "🧀 QUESO CHEDDAR",
+            "tomate": "🍅 TOMATE", "lechuga": "🥬 LECHUGA", "pan-superior": "🍞 PAN SUPERIOR",
+            "huevo": "🍳 HUEVO FRITO", "jamon": "🐖 JAMÓN COCIDO", "tocino": "🥓 TOCINO",
+            "cebolla": "🧅 AROS CEBOLLA", "ketchup": "🍅 HILO KÉTCHUP", "mayonesa": "🍋 HILO MAYONESA", "mostaza": "🟡 HILO MOSTAZA"
+        };
+
+        let platoX = 250; const velocidadPlato = 35; const anchoEscenario = 650; const anchoPlato = 150;
+        let listaCayendo = [];
+
+        function asignarNuevoCombo() {
+            const comboAleatorio = listaCombos[Math.floor(Math.random() * listaCombos.length)];
+            document.getElementById("nombre-combo").innerText = comboAleatorio.nombre;
+            pedidoObjetivo = comboAleatorio.receta;
+
+            const contenedor = document.getElementById("pedido-visual");
+            contenedor.innerHTML = "";
+            pedidoObjetivo.forEach(ing => {
+                const div = document.createElement("div");
+                div.className = `ingrediente ${ing}`;
+                div.innerText = nombresVisuales[ing];
+                contenedor.appendChild(div);
+            });
+        }
+
+        function controlIniciar() {
+            if (juegoCorriendo) return;
+            // Mejora: algunos navegadores exigen un gesto del usuario para
+            // arrancar el audio; "Iniciar" es ese gesto, así que reanudamos aquí.
+            if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+
+            juegoCorriendo = true;
+            document.getElementById("pausa-cartel").style.display = "none";
+            document.getElementById("btn-play").disabled = true;
+            document.getElementById("btn-pause").disabled = false;
+            
+            if (primerArranque) {
+                asignarNuevoCombo();
+                redibujarPlato();
+                primerArranque = false;
+            }
+        }
+
+        function controlPausar() {
+            if (!juegoCorriendo) return;
+            juegoCorriendo = false;
+            document.getElementById("pausa-cartel").style.display = "flex";
+            document.getElementById("btn-play").disabled = false;
+            document.getElementById("btn-pause").disabled = true;
+        }
+
+        function moverCelular(direccion) {
+            if (!juegoCorriendo) return;
+            const platoHtml = document.getElementById("plato");
+            platoX += (direccion * velocidadPlato);
+            
+            if (platoX < 0) platoX = 0;
+            if (platoX > (anchoEscenario - anchoPlato)) platoX = anchoEscenario - anchoPlato;
+            
+            platoHtml.style.left = platoX + "px";
+        }
+
+        window.addEventListener("keydown", (e) => {
+            if (!juegoCorriendo) return;
+            if (e.key === "ArrowLeft") moverCelular(-1);
+            else if (e.key === "ArrowRight") moverCelular(1);
+            else if (e.key === " ") { e.preventDefault(); popIngrediente(); }
+        });
+
+        // --- Mejora: arrastre táctil directo sobre el escenario para mover el plato ---
+        const escenarioEl = document.getElementById("escenario");
+        function moverPlatoAPosicion(clientX) {
+            if (!juegoCorriendo) return;
+            const rect = escenarioEl.getBoundingClientRect();
+            let nuevaX = clientX - rect.left - (anchoPlato / 2);
+            if (nuevaX < 0) nuevaX = 0;
+            if (nuevaX > (anchoEscenario - anchoPlato)) nuevaX = anchoEscenario - anchoPlato;
+            platoX = nuevaX;
+            document.getElementById("plato").style.left = platoX + "px";
+        }
+        escenarioEl.addEventListener("touchstart", (e) => { moverPlatoAPosicion(e.touches[0].clientX); }, { passive: true });
+        escenarioEl.addEventListener("touchmove", (e) => { moverPlatoAPosicion(e.touches[0].clientX); e.preventDefault(); }, { passive: false });
+
+        function pushIngrediente(tipo) {
+            if (pilaJugador.length >= 12 || pilaJugador[pilaJugador.length - 1] === "pan-superior") return;
+
+            pilaJugador.push(tipo); 
+            playSound('push');
+            redibujarPlato();
+            
+            if (tipo === "pan-superior") {
+                verificarPilaFinal();
+            }
+        }
+
+        function popIngrediente() {
+            if (pilaJugador.length > 1) { 
+                pilaJugador.pop(); 
+                playSound('pop');
+                redibujarPlato();
+            } else {
+                playSound('perder');
+            }
+        }
+
+        function redibujarPlato() {
+            const platoHtml = document.getElementById("plato");
+            platoHtml.innerHTML = "";
+            pilaJugador.forEach(ing => {
+                const div = document.createElement("div");
+                div.className = `ingrediente ${ing}`;
+                div.innerText = nombresVisuales[ing];
+                platoHtml.appendChild(div);
+            });
+        }
+
+        function loopsHilosDeLluvia() {
+            if (!juegoCorriendo) return;
+            const escenario = document.getElementById("escenario");
+            const tipoAleatorio = tiposIngredientes[Math.floor(Math.random() * tiposIngredientes.length)];
+            
+            const div = document.createElement("div");
+            div.className = `ingrediente cayendo ${tipoAleatorio}`;
+            div.innerText = nombresVisuales[tipoAleatorio];
+            
+            const posX = Math.random() * (anchoEscenario - 130);
+            div.style.left = posX + "px"; div.style.top = "0px";
+            escenario.appendChild(div);
+            
+            listaCayendo.push({ element: div, tipo: tipoAleatorio, x: posX, y: 0 });
+        }
+
+        function actualizarFisicas() {
+            if (!juegoCorriendo) return;
+            const limiteChoqueY = 448 - (pilaJugador.length * 22); 
+
+            for (let i = listaCayendo.length - 1; i >= 0; i--) {
+                let ing = listaCayendo[i];
+                ing.y += velocidadCaidaActual;
+                ing.element.style.top = ing.y + "px";
+
+                if (ing.y >= limiteChoqueY && ing.y <= (limiteChoqueY + 16)) {
+                    if (ing.x + 100 >= platoX && ing.x <= platoX + anchoPlato) {
+                        pushIngrediente(ing.tipo);
+                        ing.element.remove();
+                        listaCayendo.splice(i, 1);
+                        continue;
+                    }
+                }
+                if (ing.y > 480) {
+                    ing.element.remove();
+                    listaCayendo.splice(i, 1);
+                }
+            }
+        }
+
+        function verificarPilaFinal() {
+            juegoCorriendo = false;
+            let esCorrecto = true;
+            
+            if (pilaJugador.length !== pedidoObjetivo.length) {
+                esCorrecto = false;
+            } else {
+                for (let i = 0; i < pedidoObjetivo.length; i++) {
+                    if (pilaJugador[i] !== pedidoObjetivo[i]) {
+                        esCorrecto = false;
+                        break;
+                    }
+                }
+            }
+
+            if (esCorrecto) {
+                puntaje++;
+                document.getElementById("marcador").innerText = `🏆 Pedidos: ${puntaje}`;
+                playSound('ganar');
+                document.getElementById("modal-victoria").style.display = "flex";
+            } else {
+                playSound('perder');
+                document.getElementById("modal-derrota").style.display = "flex";
+            }
+        }
+
+        function siguienteRonda() {
+            listaCayendo.forEach(ing => ing.element.remove());
+            listaCayendo = [];
+            pilaJugador = ["pan-inferior"];
+            redibujarPlato();
+            asignarNuevoCombo();
+            
+            document.getElementById("modal-victoria").style.display = "none";
+            document.getElementById("modal-derrota").style.display = "none";
+            juegoCorriendo = true;
+        }
+
+        function salirDelJuego() {
+            juegoCorriendo = false;
+            document.getElementById("modal-victoria").style.display = "none";
+            document.getElementById("modal-derrota").style.display = "none";
+            document.body.innerHTML = `
+                <div style="text-align: center; margin-top: 35vh; font-family:'Segoe UI',sans-serif; padding:20px; background:#1e1b4b; border-radius:20px; border:3px solid #db2777; width: 300px; margin-left: auto; margin-right: auto;">
+                    <h2 style="font-size:28px; color:#f59e0b; margin:0 0 10px 0;">¡GRACIAS POR JUGAR!</h2>
+                    <p style="color: #a5b4fc; font-size:14px; margin:0 0 15px 0;">Has salido del area de cocina.</h2>Pedidos entregados: ${puntaje}</p>
+                    <button class="btn-arcade btn-play" style="width:100%;" onclick="location.reload()">🔄 Volver a Jugar</button>
+                </div>
+            `;
+        }
+
+        // --- Mejora: reescalado automático para que el juego quede siempre
+        // centrado y completo en pantalla, sin cortes ni scroll. ---
+        function ajustarEscala() {
+            const cont = document.getElementById("interfaz-juego");
+            if (!cont) return;
+            const anchoNatural = cont.offsetWidth || 1130;
+            const altoNatural = cont.offsetHeight || 520;
+            const margen = 24;
+            const escala = Math.min(
+                1,
+                (window.innerWidth - margen) / anchoNatural,
+                (window.innerHeight - 90 - margen) / altoNatural
+            );
+            cont.style.transform = `scale(${escala})`;
+        }
+        window.addEventListener("resize", ajustarEscala);
+        window.addEventListener("load", ajustarEscala);
+        ajustarEscala();
+
+        redibujarPlato();
+        setInterval(loopsHilosDeLluvia, 1600); 
+        setInterval(actualizarFisicas, 20);    
+    </script>
+</body>
+</html>
